@@ -1,0 +1,18 @@
+{
+  "name": "sctm",
+  "version": "0.0.1",
+  "description": "Software Compatibility Testing Manage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express"    : "latest",
+    "request"    : "latest",
+    "cheerio"    : "latest",
+    "body-parser": "latest",
+    "utils"      : "latest"
+  },
+  "author": "wuhuizuo",
+  "license": "MIT"
+}
