@@ -8,6 +8,9 @@ function QQStockParser() {
   this.base_url = 'http://stock.finance.qq.com';
   this.list_url = '/sstock/view/show.php';
   this.item_detail_url = '/corp1/distri.php';
+  this.XPATH_ITEM_DETAIL_TABLE = 'body div.page div table';
+  this.FENHONG_HEADER = ['报告期',	'每股收益(元)', '每10股送股(股)', '每10股转增(股)',	'每10股分红(元)', '登记日','除权日'];
+
   this.db = {
     list: {},
     detail: {}
@@ -30,9 +33,14 @@ function QQStockParser() {
    *
    */
   this.on('data_stockListPage', function(list) {
-    console.log(list['result'].length);
+    var codes = list.result;
+    for (var i = 0; i < codes.length; i++) {
+      this.getStockDetail(codes[i].ZQDM)
+    }
   })
-
+  this.on('data_stockItemDetail_Fenhong', function(data) {
+    console.log('证券代码:' + data.code + "\t分红次数:" + data.data.length);
+  })
 }
 
 //具有事件驱动功能
@@ -62,7 +70,6 @@ QQStockParser.prototype.getStockListAtOnePage = function(type, page) {
   page = page || 1;
   var stock = this;
   var url = stock.base_url + stock.list_url + '?t=qgqp&c=search_by_type&type=' + type + '&p=' + page
-  console.log('start url:' + url)
   request(url, function(error, response, data) {
     if (error) {
       console.log(error);
@@ -80,6 +87,45 @@ QQStockParser.prototype.getStockListAtOnePage = function(type, page) {
           stock.emit('data_stockListPage_First', result)
         }
       }
+    }
+  });
+};
+
+/**
+ * @param [string] code   stock number
+ */
+QQStockParser.prototype.getStockDetail = function(code) {
+  var stock = this;
+  var codeDetailUrl = stock.base_url + stock.item_detail_url + '?zqdm=' + code;
+  //~ console.log('visiting detail url:' + codeDetailUrl);
+  
+	request(codeDetailUrl, function(error, response, html) {
+    if (error) {
+      console.log(error);
+    }
+    else {
+      var $ = cheerio.load(html)
+      var hisFenhongTable = $(stock.XPATH_ITEM_DETAIL_TABLE).filter(function(i, el) {
+        console.log(i);
+        console.log($this.children('tbody').first().html())
+        console.log($('tbody tr td', this).first().text())
+        return $(this).children('tbody tr td').first().text() === '历史分配';
+      }).children('tbody tr')
+      
+      
+      if (hisFenhongTable.length > 2) {
+        console.log('code:' + code + 'has fenhong')
+        var hisFenhong = {};
+        hisFenhong.code = code;
+        hisFenhong.data = hisFenhongTable.slice(2).map(function(index, tr) {
+          return $(link).children('td').map(function(index, td) {
+            console.log($(this).text())
+            return $(this).text();
+          }).get();
+        }).get();
+        console.log(hisFenhong.data)
+        stock.emit('data_stockItemDetail_Fenhong', hisFenhong);
+      }        
     }
   });
 };
