@@ -1,4 +1,5 @@
 var QQStockParser = require('../src/lib/qqStockParser')
 
 var stock = new QQStockParser();
-stock.getStockDetail('601186')
+stock.getStockList(1)
+//~ stock.getStockDetail('000055')
